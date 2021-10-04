@@ -1,5 +1,5 @@
 {
-  "name": "joernneumeyer/neu",
+  "name": "neu/curl",
   "description": "A PHP library to easily run multiple cUrl requests in parallel.",
   "type": "project",
   "license": "LGPL-3.0-or-later",
