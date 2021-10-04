@@ -13,7 +13,14 @@
     /** @var Curl[] */
     private $instances = [];
 
-    public function __construct() {
+    private $handle;
+
+    public function __construct(?MultiCurl $handle = null) {
+      $this->handle = $handle ?? new MultiCurl();
+    }
+
+    public function handle(): MultiCurl {
+      return $this->handle;
     }
 
     public function addInstance(Curl $curl) {
@@ -54,15 +61,14 @@
     }
 
     public function exec() {
-      $multi = new MultiCurl();
       foreach ($this->instances as $instance) {
-        $multi->addHandle($instance);
+        $this->handle->addHandle($instance);
       }
 
-      $result = $multi->exec();
+      $result = $this->handle->exec();
 
       foreach ($this->instances as $instance) {
-        $multi->removeHandle($instance);
+        $this->handle->removeHandle($instance);
       }
 
       return $result;
