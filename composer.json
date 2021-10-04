@@ -1,0 +1,30 @@
+{
+  "name": "joernneumeyer/neu",
+  "description": "A PHP library to easily run multiple cUrl requests in parallel.",
+  "type": "project",
+  "license": "LGPL-3.0-or-later",
+  "authors": [
+    {
+      "name": "Jörn Neumeyer",
+      "email": "contact@joern-neumeyer.de"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "Neu\\Curl\\": "src/"
+    }
+  },
+  "require-dev": {
+    "pestphp/pest": "^1.0",
+    "phpstan/phpstan": "^0.12.90"
+  },
+  "require": {
+    "php": ">=7.3",
+    "ext-curl": "*"
+  },
+  "scripts": {
+    "test": "pest --min=70 --coverage",
+    "phpstan": "vendor/bin/phpstan analyse -c phpstan.neon",
+    "test:dummy-api": "php -S 127.0.0.1:8833"
+  }
+}
