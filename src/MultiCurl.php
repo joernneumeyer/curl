@@ -8,8 +8,14 @@
     private $handle;
     private $subHandles = [];
 
+    public const PARSE_BODY = 1;
+
     public function __construct($handle = null) {
       $this->handle = $handle ?? curl_multi_init();
+    }
+
+    public function handle() {
+      return $this->handle;
     }
 
     public function __destruct() {
@@ -20,7 +26,7 @@
       curl_multi_close($this->handle);
     }
 
-    public function opt(int $opt, $value): bool {
+    public function setOpt(int $opt, $value): bool {
       return curl_multi_setopt($this->handle, $opt, $value);
     }
 
@@ -40,13 +46,30 @@
       return curl_multi_select($this->handle, $timeout);
     }
 
-    public function exec(): array {
-      $stillRunning = 0;
-      curl_multi_exec($this->handle, $stillRunning);
-      while ($stillRunning) usleep(20000);
+    public function exec(int $export = 0): array {
+      foreach ($this->subHandles as $sh) {
+        curl_multi_add_handle($this->handle, $sh->handle());
+      }
+      // https://www.php.net/manual/en/function.curl-multi-exec.php
+      do {
+        $status = curl_multi_exec($this->handle, $active);
+        if ($active) {
+            curl_multi_select($this->handle);
+        }
+      } while ($active && $status == CURLM_OK);
       $result = [];
-      while (($buffer = curl_multi_info_read($this->handle)) !== false) {
-        $result[] = $buffer;
+      foreach($this->subHandles as $sh) {
+        if ($export === self::PARSE_BODY) {
+          $info = curl_getinfo($sh->handle());
+          if ($info['content_type'] === 'application/json') {
+            $result[] = json_decode(curl_multi_getcontent($sh->handle()), true);
+            continue;
+          }
+        }
+        $result[] = curl_multi_getcontent($sh->handle());
+      }
+      foreach ($this->subHandles as $sh) {
+        curl_multi_remove_handle($this->handle, $sh->handle());
       }
       return $result;
     }
