@@ -17,6 +17,11 @@
 
     public function __construct(?MultiCurl $handle = null) {
       $this->handle = $handle ?? new MultiCurl();
+      $this->setOpt(CURLMOPT_PIPELINING, CURLPIPE_MULTIPLEX);
+    }
+
+    public function setOpt($opt, $value): bool {
+      return $this->handle->setOpt($opt, $value);
     }
 
     public function handle(): MultiCurl {
@@ -24,16 +29,16 @@
     }
 
     public function addInstance(Curl $curl) {
-      $this->instances[] = $curl;
+      $this->handle->addHandle($curl);
     }
 
     /**
      * @param string $url
      * @param string $method
-     * @param string|array|null $body
+     * @param string $body
      * @return Curl
      */
-    public function queue(string $url, string $method = 'GET', $body = null): Curl {
+    public function queue(string $url, string $method = 'GET', $body = ''): Curl {
       $c = new Curl();
       $c->setOpt(CURLOPT_POST, 1);
       switch ($method) {
@@ -48,12 +53,7 @@
         default:
           throw new InvalidArgumentException('Cannot set HTTP method to "' . $method . '"! Choose GET, POST, or PUT.');
       }
-      if ($body) {
-        if ($method === 'GET') {
-          throw new InvalidArgumentException('Cannot set a body on a GET request!');
-        }
-        $c->setOpt(CURLOPT_POSTFIELDS, $body);
-      }
+      $c->setOpt(CURLOPT_POSTFIELDS, $body);
       $c->setOpt(CURLOPT_URL, $url);
       $c->setOpt(CURLOPT_RETURNTRANSFER, 1);
       $this->addInstance($c);
@@ -65,7 +65,7 @@
         $this->handle->addHandle($instance);
       }
 
-      $result = $this->handle->exec();
+      $result = $this->handle->exec(MultiCurl::PARSE_BODY);
 
       foreach ($this->instances as $instance) {
         $this->handle->removeHandle($instance);
