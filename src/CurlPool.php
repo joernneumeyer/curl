@@ -7,38 +7,59 @@
   use InvalidArgumentException;
 
   /**
-   * @package Neu\Curl;
+   * @package Neu\Curl
    */
   class CurlPool {
     /** @var Curl[] */
     private $instances = [];
 
+    /**
+     * @var MultiCurl
+     */
     private $handle;
 
+    /**
+     * @param MultiCurl|null $handle
+     */
     public function __construct(?MultiCurl $handle = null) {
       $this->handle = $handle ?? new MultiCurl();
       $this->setOpt(CURLMOPT_PIPELINING, CURLPIPE_MULTIPLEX);
     }
 
-    public function setOpt($opt, $value): bool {
+    /**
+     * @link curl_multi_setopt()
+     * @param int $opt
+     * @param mixed $value
+     * @return bool
+     */
+    public function setOpt(int $opt, $value): bool {
       return $this->handle->setOpt($opt, $value);
     }
 
+    /**
+     * Retrieve the underlying handle.
+     * @return MultiCurl
+     */
     public function handle(): MultiCurl {
       return $this->handle;
     }
 
-    public function addInstance(Curl $curl) {
+    /**
+     * Add a @link Curl instance for batch execution.
+     * @param Curl $curl
+     */
+    public function addInstance(Curl $curl): void {
       $this->handle->addHandle($curl);
     }
 
     /**
-     * @param string $url
-     * @param string $method
-     * @param string $body
+     * Queue an HTTP call for later batch execution.
+     * @param string $url Target URL.
+     * @param string $method HTTP method, i.e. GET, PUT, or POST.
+     * @param string $body Request body as text.
      * @return Curl
      */
-    public function queue(string $url, string $method = 'GET', $body = ''): Curl {
+    public function queue(string $url, string $method = 'GET', string $body = ''): Curl {
       $c = new Curl();
       $c->setOpt(CURLOPT_POST, 1);
       switch ($method) {
@@ -60,7 +81,11 @@
       return $c;
     }
 
-    public function exec() {
+    /**
+     * Returns an array containing all responses from the registered requests.
+     * @return array<mixed>
+     */
+    public function exec(): array {
       foreach ($this->instances as $instance) {
         $this->handle->addHandle($instance);
       }
