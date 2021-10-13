@@ -54,7 +54,7 @@
       do {
         $status = curl_multi_exec($this->handle, $active);
         if ($active) {
-            curl_multi_select($this->handle);
+          $this->select();
         }
       } while ($active && $status == CURLM_OK);
       $result = [];
